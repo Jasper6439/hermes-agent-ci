@@ -1,101 +1,152 @@
-# Source: AutoGPT
-# Upstream: https://github.com/Significant-Gravitas/AutoGPT
-# Integrated: 2026-06-11
-# See ~/.hermes/AGENT_SOURCES.md for full provenance map
+#!/usr/bin/env python3
+"""Unified Recall — Single entry point for all memory layers.
+
+Replaces: fusion_recall, fusion_search, session_search, semblectl_search
+Layers: L1 (topic) → L2 (fusion/vector) → L2.5 (collective) → L3 (memory.md) → L4 (session DB) → L5 (wiki)
 """
-Unified Recall Tool — 统一记忆召回工具
-
-整合 L2 Fusion + Semble (L3/L4/L5)，提供一站式记忆召回。
-
-Usage:
-    unified_recall(query="部署前检查", limit=5)
-"""
-
-from __future__ import annotations
-
 import json
-import logging
-from typing import Any, Dict
+import os
+from typing import Any, Dict, List, Optional
 
-from tools.registry import registry
+def unified_recall(query: str, limit: int = 5, min_confidence: float = 0.3) -> Dict[str, Any]:
+    """Single entry point for all memory layers.
+    
+    Args:
+        query: Search query
+        limit: Max results per layer
+        min_confidence: Minimum confidence threshold
+    
+    Returns:
+        {
+            "results": [...],
+            "sources": ["L1", "L2_Fusion", ...],
+            "total": int,
+            "filtered": int,
+        }
+    """
+    all_results = []
+    sources_used = []
+    
+    # L1: Topic Memory (auto-injected via pre_llm_call, skip here)
+    
+    # L2: Fusion/Qdrant vector search
+    try:
+        from fusion import get_fusion_provider
+        fusion = get_fusion_provider()
+        if fusion and fusion.is_available():
+            result_str = fusion.handle_tool_call("fusion_search", {
+                "query": query,
+                "limit": limit,
+                "min_confidence": min_confidence,
+            })
+            fusion_data = json.loads(result_str)
+            for r in fusion_data.get("results", []):
+                all_results.append({
+                    "source": "L2_Fusion",
+                    "text": r.get("text", ""),
+                    "score": r.get("confidence", 0.5),
+                })
+            if fusion_data.get("results"):
+                sources_used.append("L2_Fusion")
+    except Exception:
+        pass
+    
+    # L3: MEMORY.md (semblectl search)
+    try:
+        from semblectl_search import search as semblectl_search
+        memory_path = os.path.expanduser("~/.hermes/memories/MEMORY.md")
+        if os.path.exists(memory_path):
+            results = semblectl_search(query, paths=[memory_path], limit=limit)
+            for r in results:
+                all_results.append({
+                    "source": "L3_MEMORY",
+                    "text": r.get("snippet", r.get("text", "")),
+                    "score": r.get("score", 0.4),
+                })
+            if results:
+                sources_used.append("L3_MEMORY")
+    except Exception:
+        pass
+    
+    # L4: Session DB (FTS5 search)
+    try:
+        from hermes_state import SessionDB
+        db = SessionDB()
+        results = db.search_messages(query, limit=limit)
+        for r in results:
+            all_results.append({
+                "source": "L4_Session",
+                "text": r.get("content", "")[:300],
+                "score": r.get("score", 0.3),
+            })
+        if results:
+            sources_used.append("L4_Session")
+    except Exception:
+        pass
+    
+    # L5: Wiki/Obsidian (semblectl search)
+    try:
+        wiki_path = os.path.expanduser("~/.hermes/memories/wiki")
+        if os.path.exists(wiki_path):
+            from semblectl_search import search as semblectl_search
+            results = semblectl_search(query, paths=[wiki_path], limit=limit)
+            for r in results:
+                all_results.append({
+                    "source": "L5_Wiki",
+                    "text": r.get("snippet", r.get("text", "")),
+                    "score": r.get("score", 0.2),
+                })
+            if results:
+                sources_used.append("L5_Wiki")
+    except Exception:
+        pass
+    
+    # Filter by confidence
+    filtered = [r for r in all_results if r.get("score", 0) >= min_confidence]
+    
+    # Sort by score
+    filtered.sort(key=lambda x: x.get("score", 0), reverse=True)
+    
+    return {
+        "results": filtered[:limit],
+        "sources": sources_used,
+        "total": len(all_results),
+        "filtered": len(filtered),
+    }
 
-logger = logging.getLogger(__name__)
-
-
-# ─── Tool Schema ──────────────────────────────────────────────────────────────
-
-UNIFIED_RECALL_SCHEMA: Dict[str, Any] = {
-    "type": "function",
-    "function": {
-        "name": "unified_recall",
-        "description": (
-            "统一记忆召回：一次搜索跨 L2/L3/L4/L5 记忆层。"
-            "L2=语义记忆(Fusion)，L3=跨话题事实，L4=会话历史，L5=祖先记忆。"
-            "返回相关记忆片段，自动去重排序。"
-        ),
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "query": {
-                    "type": "string",
-                    "description": "搜索查询",
-                },
-                "limit": {
-                    "type": "integer",
-                    "description": "返回结果数量（默认 5）",
-                    "default": 5,
-                },
-                "include_fusion": {
-                    "type": "boolean",
-                    "description": "是否包含 L2 Fusion（默认 true）",
-                    "default": True,
-                },
-                "include_semble": {
-                    "type": "boolean",
-                    "description": "是否包含 L3-L5 Semble（默认 true）",
-                    "default": True,
-                },
+# Tool schema for LLM
+TOOL_SCHEMA = {
+    "name": "unified_recall",
+    "description": (
+        "Search all memory layers (L1-L5) with a single query. "
+        "Returns relevant memories from topic memory, vector search, "
+        "session history, and knowledge base."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "query": {
+                "type": "string",
+                "description": "What to search for in memory.",
             },
-            "required": ["query"],
+            "limit": {
+                "type": "integer",
+                "description": "Max results (default: 5).",
+            },
+            "min_confidence": {
+                "type": "number",
+                "description": "Minimum confidence threshold (default: 0.3).",
+            },
         },
+        "required": ["query"],
     },
 }
 
-
-# ─── Handler ──────────────────────────────────────────────────────────────────
-
-def _handle_unified_recall(**kwargs) -> str:
-    """处理统一召回。"""
-    from agent.unified_recall import unified_recall
+def handle_tool_call(args: Dict[str, Any]) -> str:
+    """Handle tool call from LLM."""
+    query = args.get("query", "")
+    limit = args.get("limit", 5)
+    min_confidence = args.get("min_confidence", 0.3)
     
-    query = kwargs.get("query", "")
-    limit = kwargs.get("limit", 5)
-    include_fusion = kwargs.get("include_fusion", True)
-    include_semble = kwargs.get("include_semble", True)
-    
-    if not query:
-        return "Error: query 是必填项"
-    
-    context = unified_recall.recall(
-        query=query,
-        include_fusion=include_fusion,
-        include_semble=include_semble,
-        limit=limit,
-    )
-    
-    if not context.results:
-        return f"未找到相关记忆: {query}"
-    
-    return context.to_prompt(max_results=limit)
-
-
-# ─── Register ──────────────────────────────────────────────────────────────────
-
-registry.register(
-    name="unified_recall",
-    toolset="memory",
-    schema=UNIFIED_RECALL_SCHEMA,
-    handler=_handle_unified_recall,
-    emoji="🧠",
-    max_result_size_chars=10_000,
-)
+    result = unified_recall(query, limit=limit, min_confidence=min_confidence)
+    return json.dumps(result, ensure_ascii=False)

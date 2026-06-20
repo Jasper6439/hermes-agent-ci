@@ -4591,6 +4591,7 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
                     session_id=getattr(agent, "session_id", None),
                     platform="gateway",
                     reason="shutdown",
+                    session_key=getattr(agent, "session_key", ""),
                 )
             except Exception:
                 pass
@@ -6034,6 +6035,7 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
                                 session_id=entry.session_id,
                                 platform=_platform,
                                 reason="session_expired",
+                                session_key=key,
                             )
                         except Exception:
                             pass

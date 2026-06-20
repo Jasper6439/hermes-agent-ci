@@ -135,6 +135,7 @@ class GatewaySlashCommandsMixin:
                 session_id=_old_sid,
                 platform=source.platform.value if source.platform else "",
                 reason="new_session",
+                session_key=session_key,
                 old_session_id=_old_sid,
                 new_session_id=new_entry.session_id if new_entry else None,
             )

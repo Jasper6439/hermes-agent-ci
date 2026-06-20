@@ -301,6 +301,21 @@ class ReflexionManager:
                 conn.commit()
                 logger.info(f"Updated reflection frequency: {reflection.task_type}/{reflection.error_type}")
     
+
+    def record(self, task_type: str = "", error_type: str = "", 
+               error_detail: str = "", reflection: str = "", 
+               improvement: str = "", context: Dict[str, Any] = None) -> None:
+        """Convenience wrapper for store_reflection()."""
+        r = Reflection(
+            task_type=task_type,
+            error_type=error_type,
+            error_detail=error_detail,
+            reflection=reflection,
+            improvement=improvement,
+            context=context or {},
+        )
+        self.store_reflection(r)
+
     def query_reflections(
         self,
         task_type: Optional[str] = None,

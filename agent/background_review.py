@@ -230,7 +230,7 @@ _COMBINED_REVIEW_PROMPT = (
     "Act on whichever of the two dimensions has real signal. If "
     "genuinely nothing stands out on either, say 'Nothing to save.' "
     "and stop — but don't reach for that conclusion as a default."
-)
+"\n\n**Complexity & Triage** — self-calibrate your task routing:\n  • Check API calls used vs complexity level. If you used 8+ calls but\n    were classified SIMPLE (max 15), record task_type='complexity_misclassification'\n    using the memory tool (prefix with [complexity_misclassification]).\n  • If this task involved architecture/infrastructure/memory changes and you\n    handled it alone without delegating to sisterhood (Enki/Socrates), record\n    using the memory tool (prefix with [triage_miss]). This teaches proactive triage.\n  • If you DID delegate and it worked, record task_type='triage_hit'.\n  Use the memory tool to record these observations.\n\n\n**Continuous Evolution** — lightweight per-turn learning:\n  - **Failure Attribution**: If a tool failed, identify which skill governs that domain and patch it. Do not just record the error — fix the source.\n  - **Skill Validation**: After updating a skill, verify the change is safe (valid YAML frontmatter, no broken references, syntax OK).\n  - **Reflexion Check**: Before recording a failure, check if this exact error pattern was seen before. If yes, reference the existing reflection instead of creating duplicate.\n  - **Quick Wins**: If you see a simple improvement (typo fix, missing example, outdated command), apply it immediately. Do not defer to nightly.\n  These actions are token-light — they use information already in context.")
 
 
 

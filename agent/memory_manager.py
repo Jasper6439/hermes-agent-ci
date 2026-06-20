@@ -70,6 +70,25 @@ def inject_memory_provider_tools(agent: Any) -> int:
     if not memory_manager or tools is None:
         return 0
 
+    # Inject unified_recall tool (replaces fusion_recall, session_search, semblectl_search)
+    try:
+        from tools.unified_recall import TOOL_SCHEMA, handle_tool_call
+        existing_tool_names = {
+            tool.get("function", {}).get("name")
+            for tool in tools
+            if isinstance(tool, dict)
+        }
+        if "unified_recall" not in existing_tool_names:
+            tools.append({
+                "type": "function",
+                "function": TOOL_SCHEMA,
+            })
+            # Register handler
+            if hasattr(agent, "_tool_handlers"):
+                agent._tool_handlers["unified_recall"] = handle_tool_call
+    except Exception as e:
+        logger.debug("Failed to inject unified_recall tool: %s", e)
+
     existing_tool_names = {
         tool.get("function", {}).get("name")
         for tool in tools

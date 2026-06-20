@@ -40,6 +40,11 @@ _HERMES_CORE_TOOLS = [
     "read_file", "write_file", "patch", "search_files",
     # Vision + image generation
     "vision_analyze", "image_generate",
+    # Unified memory recall (replaces fusion_recall, session_search, semblectl_search)
+    "unified_recall",
+    # Sisterhood workflow
+    "sisterhood_parallel", "sisterhood_deliberate", "plan_and_dispatch",
+    "get_task_result", "mark_insight_for_learning",
     # Skills
     "skills_list", "skill_view", "skill_manage",
     # Browser automation
@@ -52,7 +57,7 @@ _HERMES_CORE_TOOLS = [
     # Planning & memory
     "todo", "memory",
     # Session history search
-    "session_search",
+    
     # Clarifying questions
     "clarify",
     # Code execution + delegation
@@ -65,11 +70,6 @@ _HERMES_CORE_TOOLS = [
     # spawned as a kanban worker (HERMES_KANBAN_TASK env set) or the current
     # profile explicitly enables the kanban toolset. Gated via check_fn in
     # tools/kanban_tools.py.
-    "kanban_show", "kanban_list",
-    "kanban_complete", "kanban_block", "kanban_heartbeat",
-    "kanban_comment", "kanban_create", "kanban_link",
-    "kanban_unblock",
-    # Computer use (macOS, gated on cua-driver being installed via check_fn)
     "computer_use",
 ]
 
@@ -261,11 +261,7 @@ TOOLSETS = {
             "orchestrators) list, unblock, and fan out tasks."
         ),
         "tools": [
-            "kanban_show", "kanban_list", "kanban_complete", "kanban_block",
-            "kanban_heartbeat", "kanban_comment",
-            "kanban_create", "kanban_link",
-            "kanban_unblock",
-        ],
+            "kanban_show", "kanban_list", "kanban_complete",             "kanban_heartbeat",             "kanban_create",                     ],
         "includes": [],
     },
 
