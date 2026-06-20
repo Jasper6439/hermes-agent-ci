@@ -1,0 +1,1 @@
+/home/ubuntu/hermes/workflows/sisterhood_enhanced.pyw

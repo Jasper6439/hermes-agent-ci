@@ -52,6 +52,7 @@ from typing import Dict, Optional, Any, List, Union
 # gateway is a long-running daemon, so its boot cost matters less than
 # preserving the established test-patch surface.
 from agent.account_usage import fetch_account_usage, render_account_usage_lines
+from agent.triage import triage_message, TriageRule
 from agent.async_utils import safe_schedule_threadsafe
 from agent.i18n import t
 from hermes_cli.config import cfg_get
@@ -9889,6 +9890,19 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
                     session_entry.session_id,
                 )
                 response = ""
+
+            
+            # EN→ZH Translation Hook (custom)
+            if response and isinstance(response, str):
+                try:
+                    from scripts.local_translator import translate_response, update_session_message
+                    _translated = translate_response(response)
+                    if _translated and _translated != response:
+                        response = _translated
+                        if agent_messages:
+                            update_session_message(agent_messages, _translated)
+                except Exception as _translate_err:
+                    pass  # Translation is optional
 
             # Auto voice reply: send TTS audio before the text response
             _already_sent = bool(agent_result.get("already_sent"))
