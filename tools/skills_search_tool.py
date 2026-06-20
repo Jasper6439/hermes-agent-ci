@@ -14,7 +14,8 @@ from tools.registry import registry
 
 _HERMES_HOME = Path(os.environ.get("HERMES_HOME", os.path.expanduser("~/.hermes")))
 
-from agent.skill_utils import _VALID_TYPES
+# _VALID_TYPES removed in v0.17, defined locally
+_VALID_TYPES = {"skill", "workflow", "template", "blueprint"}
 
 
 def _search_skills(query: str, category: Optional[str] = None, skill_type: Optional[str] = None, limit: int = 10) -> Dict[str, Any]:
