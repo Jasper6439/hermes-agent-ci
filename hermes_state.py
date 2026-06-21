@@ -2508,6 +2508,11 @@ class SessionDB:
         platform-specific flows like yuanbao's recall guard to redact a
         message by its platform-side identifier.
         """
+        # Skip tool messages - don't store in L4
+        if role == "tool":
+            logger.debug("Skipping tool message storage in L4 (role=%s)", role)
+            return -1
+        
         # Serialize structured fields to JSON before entering the write txn
         reasoning_details_json = (
             json.dumps(reasoning_details)

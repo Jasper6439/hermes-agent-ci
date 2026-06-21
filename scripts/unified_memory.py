@@ -9,6 +9,7 @@ Overflow: L1 full → extract key facts to L2, trim L1
 """
 
 import hashlib
+from datetime import datetime, timezone
 import json
 import logging
 import os
@@ -265,11 +266,21 @@ def _push_to_qdrant(text: str, session_key: str) -> bool:
 
         client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_KEY, timeout=30)
         point_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"L1_overflow:{session_key}:{len(text)}"))
+        # Extract topic_id from session_key
+        topic_id = ""
+        if session_key and ":" in session_key:
+            parts = session_key.split(":")
+            if len(parts) >= 5:
+                topic_id = parts[-1]  # Last part is thread_id
+        
         client.upsert(collection_name=QDRANT_COLLECTION, points=[
             PointStruct(id=point_id, vector=vec, payload={
                 "text": text,
                 "source": "L1_overflow",
                 "session_key": session_key,
+                "topic_id": topic_id,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "level": "L2",
             })
         ])
         return True

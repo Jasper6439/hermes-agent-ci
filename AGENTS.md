@@ -81,7 +81,7 @@ grep/rg 已被拦截（代码索引 + 结构化匹配 + 低误报率），强制
 - `vaultwarden/` — 密码管理
 - `honcho-qdrant/` — 记忆系统
 - `qinglong/` — 青龙面板
-- `camofox-browser/` — 反检测浏览器
+- `lib/cloakbrowser/` — 反检测浏览器 (CloakBrowser)
 - `obfuscator/` — 混淆工具
 - `lib/` — 工具专用venv
 

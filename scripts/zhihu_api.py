@@ -5,7 +5,7 @@ from pathlib import Path
 
 ZHIHU_API_KEY = os.environ.get("ZHIHU_API_KEY", "")
 BASE_URL = "https://developer.zhihu.com/api/v1/content/"
-DATA_DIR = Path.home() / "workspace" / "projects" / "trading-system" / "zhihu_sentiment"
+DATA_DIR = Path.home() / "workspace" / "projects" / "trading-system" / "data" / "zhihu_sentiment"
 QUOTA_FILE = DATA_DIR / "quota_state.json"
 
 CRYPTO_MAJOR = ["比特币","BTC","以太坊","ETH","Solana","SOL","XRP瑞波","DOGE狗狗币","ADA","AVAX","DOT","LINK","UNI","TON","SUI","APT","NEAR","PEPE","ARB","OP","AAVE","BNB"]
