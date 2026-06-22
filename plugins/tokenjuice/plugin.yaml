@@ -1,0 +1,10 @@
+author: vincentkoc/tokenjuice (integrated by Hermes)
+description: 'TokenJuice — deterministic output compaction using 267+ JSON rules.
+  Compresses CLI output from git/npm/docker/kubectl/etc before sending to LLM. Based
+  on vincentkoc/tokenjuice rules.
+
+  '
+hooks:
+- transform_tool_result
+name: tokenjuice
+version: 1.0.0

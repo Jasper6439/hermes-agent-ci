@@ -1,0 +1,6 @@
+name: headroom-hook
+version: 1.0.0
+description: Content-type aware compression hook using Headroom
+author: hermes
+hooks:
+  - transform_tool_result
